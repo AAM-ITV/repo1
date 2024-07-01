@@ -1,10 +1,15 @@
-*FROM tomcat:latest
-RUN apt update
-RUN apt install default-jdk -y
-RUN apt install maven -y
-EXPOSE 80
-RUN git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello
-RUN cd /home/user/boxfuse/boxfuse-sample-java-war-hello
+FROM tomcat:9-jdk11-openjdk-slim
+
+# Установка git и maven
+RUN apt-get update && apt-get install -y git maven
+
+# Клонирование репозитория
+RUN git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git /usr/local/tomcat/webapps/hello
+
+# Переход в директорию проекта
+WORKDIR /usr/local/tomcat/webapps/hello
+
+# Выполнение сборки Maven
 RUN mvn package
 
 # Копирование сгенерированного WAR-файла в директорию webapps Tomcat
