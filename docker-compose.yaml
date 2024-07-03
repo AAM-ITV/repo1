@@ -1,0 +1,27 @@
+services:
+  tomcat:
+    image: tomcat:9-jdk11-openjdk-slim  # Docker image for Tomcat with OpenJDK 11
+    ports:
+      - "8080:8080"  # Port mapping for accessing Tomcat outside the container
+    volumes:
+      - tomcat-webapps:/usr/local/tomcat/webapps  # Mount volume for Tomcat web applications data
+
+    command: >  # Command executed when the container starts
+
+      /bin/bash -c "
+        # Update packages and install Git and Maven
+        apt-get update &&
+        apt-get install -y git maven &&
+        # Clone the sample application repository
+        git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git /usr/local/tomcat/webapps/hello &&
+        # Change to the project directory and build the Maven project
+        cd /usr/local/tomcat/webapps/hello &&
+        mvn package &&
+        # Copy the generated WAR file to the Tomcat webapps directory
+        cp target/*.war /usr/local/tomcat/webapps/ &&
+        # Start the Tomcat server
+        catalina.sh run
+      "
+
+volumes:
+  tomcat-webapps:  # Define a volume for Tomcat data storage

@@ -15,7 +15,9 @@ RUN mvn package
 # Копирование сгенерированного WAR-файла в директорию webapps Tomcat
 RUN cp target/*.war /usr/local/tomcat/webapps/
 
+
+
 # Открытие порта Tomcat
 EXPOSE 8080
-
+################ это внизу писать не надо так как это есть в образе (1 строчка)####################
 CMD ["catalina.sh", "run"]
