@@ -1,48 +1,62 @@
 ---
-- name: install build
+- name: Build application
   hosts: build
   become: yes
+  tasks:
+    - name: Install Docker and Git on build node
+      apt:
+        name: ['docker.io', 'git', 'maven', 'default-jdk']
+        state: present
 
-  tasks: 
-  - name: Install docker git and maven
-    apt:
-      name: [ 'git', 'maven', 'default-jdk']
-      state: present
-  
-  - name: Clone Repository
-    git:
-     repo: https://github.com/boxfuse/boxfuse-sample-java-war-hello.git
-     dest : /home/user/repoall
+    - name: Clone repository
+      git:
+        repo: https://github.com/boxfuse/boxfuse-sample-java-war-hello.git
+        dest: /usr/local/tomcat/webapps/hello
 
-  - name : Building java application
-    shell:
-      cd /home/user/repoall/boxfuse-sample-java-war-hello
-      mvn package
-  - name: Copy War file
-    shell:
-     cp /home/user/repoall/boxfuse-sample-java-war-hello/tagret/*.war /tmp
-    copy:
-  - name: Save war file
-    volumes:
-          - "/tmp:/tmp"
- 
-    #delegate_to: prod
+    - name: Build project
+      shell: |
+        cd /usr/local/tomcat/webapps/hello/*.war
+        mvn package
 
-- name: Deploy java application
-  hosts: prod
+    - name: Copy Dockerfile
+      copy:
+        content: |
+          FROM tomcat:9-jdk11-openjdk-slim
+          COPY hello-1.0.war /usr/local/tomcat/webapps
+          EXPOSE 8080
+         # CMD ["catalina.sh", "run"]
+        dest: /usr/local/tomcat/webapps/Dockerfile
+
+    - name: Build Docker image
+      shell: |
+        cp /usr/local/tomcat/webapps/hello/boxfuse-sample-java-war-hello/target/*.war /usr/local/tomcat/webapps
+        docker build -t my_app_image:latest /usr/local/tomcat/webapps/
+
+    - name: Save Docker image to file
+      shell: docker save -o /tmp/my_app_image.tar my_app_image:latest
+
+    - name: Copy Docker image file to app node
+      copy:
+        src: /tmp/my_app_image.tar
+        dest: /tmp/my_app_image.tar
+      delegate_to: app-node
+
+- name: Load and Run Docker Image on App Node
+  hosts: app
   become: yes
   tasks:
-    -  name : Install docker
-       apt:
-         name: docker.io
-         state: started
+    - name: Install Docker on app node
+      apt:
+        name: docker.io
+        state: present
 
-    - name: Create docker container
+    - name: Load Docker image from file
+      shell: docker load -i /tmp/my_app_image.tar
+
+    - name: Run application container
       docker_container:
-        name: prod_container
-        image: tomcat:9-jdk11-openjdk-slim
-        state : started
+        name: app_container
+        image: my_app_image:latest
+        state: started
         ports:
           - "8080:8080"
-        volumes:
-          - "/tmp:/usr/local/tomcat/webapps"
