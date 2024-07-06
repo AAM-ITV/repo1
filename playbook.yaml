@@ -1,0 +1,48 @@
+---
+- name: install build
+  hosts: build
+  become: yes
+
+  tasks: 
+  - name: Install docker git and maven
+    apt:
+      name: [ 'git', 'maven', 'default-jdk']
+      state: present
+  
+  - name: Clone Repository
+    git:
+     repo: https://github.com/boxfuse/boxfuse-sample-java-war-hello.git
+     dest : /home/user/repoall
+
+  - name : Building java application
+    shell:
+      cd /home/user/repoall/boxfuse-sample-java-war-hello
+      mvn package
+  - name: Copy War file
+    shell:
+     cp /home/user/repoall/boxfuse-sample-java-war-hello/tagret/*.war /tmp
+    copy:
+  - name: Save war file
+    volumes:
+          - "/tmp:/tmp"
+ 
+    #delegate_to: prod
+
+- name: Deploy java application
+  hosts: prod
+  become: yes
+  tasks:
+    -  name : Install docker
+       apt:
+         name: docker.io
+         state: started
+
+    - name: Create docker container
+      docker_container:
+        name: prod_container
+        image: tomcat:9-jdk11-openjdk-slim
+        state : started
+        ports:
+          - "8080:8080"
+        volumes:
+          - "/tmp:/usr/local/tomcat/webapps"
