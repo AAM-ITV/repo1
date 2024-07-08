@@ -11,8 +11,8 @@
 
     - name: Copy Dockerfile to build node
       copy:
-        src: /home/user/repo1/Dockerfile  # Полный путь к Dockerfile на мастер-ноде
-        dest: /tmp/Dockerfile  # Путь назначения на build-ноду
+        src: /home/user/repo1/Dockerfile 
+        dest: /tmp/Dockerfile  
 
     - name: Build Docker image
       command: docker build -t my_appv1_image:latest /tmp
