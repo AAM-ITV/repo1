@@ -1,23 +1,25 @@
 FROM tomcat:9-jdk11-openjdk-slim
 
-# Установка git и maven
+
 RUN apt-get update && apt-get install -y git maven
 
-# Клонирование репозитория
+
 RUN git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git /usr/local/tomcat/webapps/hello
 
-# Переход в директорию проекта
 WORKDIR /usr/local/tomcat/webapps/hello
 
-# Выполнение сборки Maven
+
 RUN mvn package
 
-# Копирование сгенерированного WAR-файла в директорию webapps Tomcat
+
 RUN cp target/*.war /usr/local/tomcat/webapps/
 
 
 
-# Открытие порта Tomcat
 EXPOSE 8080
+<<<<<<< HEAD
     ################ это внизу писать не надо так как это есть в образе (1 строчка)####################
 CMD ["catalina.sh", "run"]
+=======
+
+>>>>>>> 5477c555e3d2ed60934365ae9d08ead06d9bfb7d
