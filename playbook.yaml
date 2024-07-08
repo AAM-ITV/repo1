@@ -1,62 +1,18 @@
 ---
-- name: Build application
-  hosts: build
+- name: Build Docker Image from Dockerfile
+  hosts: build-node
   become: yes
+
   tasks:
-    - name: Install Docker and Git on build node
-      apt:
-        name: ['docker.io', 'git', 'maven', 'default-jdk']
-        state: present
-
-    - name: Clone repository
-      git:
-        repo: https://github.com/boxfuse/boxfuse-sample-java-war-hello.git
-        dest: /usr/local/tomcat/webapps/hello
-
-    - name: Build project
-      shell: |
-        cd /usr/local/tomcat/webapps/hello/*.war
-        mvn package
-
-    - name: Copy Dockerfile
-      copy:
-        content: |
-          FROM tomcat:9-jdk11-openjdk-slim
-          COPY hello-1.0.war /usr/local/tomcat/webapps
-          EXPOSE 8080
-         # CMD ["catalina.sh", "run"]
-        dest: /usr/local/tomcat/webapps/Dockerfile
-
-    - name: Build Docker image
-      shell: |
-        cp /usr/local/tomcat/webapps/hello/boxfuse-sample-java-war-hello/target/*.war /usr/local/tomcat/webapps
-        docker build -t my_app_image:latest /usr/local/tomcat/webapps/
-
-    - name: Save Docker image to file
-      shell: docker save -o /tmp/my_app_image.tar my_app_image:latest
-
-    - name: Copy Docker image file to app node
-      copy:
-        src: /tmp/my_app_image.tar
-        dest: /tmp/my_app_image.tar
-      delegate_to: app-node
-
-- name: Load and Run Docker Image on App Node
-  hosts: app
-  become: yes
-  tasks:
-    - name: Install Docker on app node
+    - name: Ensure Docker is installed
       apt:
         name: docker.io
         state: present
 
-    - name: Load Docker image from file
-      shell: docker load -i /tmp/my_app_image.tar
+    - name: Copy Dockerfile to build node
+      copy:
+        src: /home/user/repo1/Dockerfile  # Полный путь к Dockerfile на мастер-ноде
+        dest: /tmp/Dockerfile  # Путь назначения на build-ноду
 
-    - name: Run application container
-      docker_container:
-        name: app_container
-        image: my_app_image:latest
-        state: started
-        ports:
-          - "8080:8080"
+    - name: Build Docker image
+      command: docker build -t my_appv1_image:latest /tmp
