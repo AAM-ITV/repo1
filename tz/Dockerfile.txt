@@ -1,0 +1,34 @@
+# Используем официальный образ Go 1.18
+FROM golang:1.18-alpine
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем go.mod и go.sum файлы
+COPY go.mod go.sum ./
+
+# Загружаем все зависимости
+RUN go mod download
+
+# Копируем весь исходный код
+COPY . .
+
+# Проверяем и добавляем недостающие зависимости
+RUN go mod tidy
+
+# Собираем бинарный файл
+RUN go build -o api_users main.go
+
+# Открываем порт
+EXPOSE 8080
+
+# Устанавливаем переменные окружения
+ENV LOG_LEVEL=INFO
+ENV ADMIN_USERNAME=Admin
+ENV ADMIN_PASS=Admin
+ENV API_LISTEN=:8080
+ENV API_READ_TIMEOUT=30s
+ENV API_WRITE_TIMEOUT=30s
+
+# Запускаем бинарный файл
+CMD ["/app/api_users"]
